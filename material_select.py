@@ -25,14 +25,30 @@ bl_info = {
 class MaterialSelect:
 
     @classmethod
-    def find_any(cls, context, obj):
-        # select objects which has one ore more materials from obj
-        pass
+    def find_any(cls, context, src_obj):
+        # select objects which has one or more materials from obj
+        cls._deselect_all(context=context)
+        for obj in context.blend_data.objects:
+            # check at least one material from scr_obj in obj
+            disjoint = not set(src_obj.data.materials).isdisjoint(obj.data.materials)
+            if disjoint:
+                obj.select = True
 
     @classmethod
-    def find_matching(cls, context, obj):
+    def find_matching(cls, context, src_obj):
         # select objects which has all materials from obj
-        pass
+        cls._deselect_all(context=context)
+        for obj in context.blend_data.objects:
+            # check all materials from src_obj in obj
+            subset = set(src_obj.data.materials).issubset(obj.data.materials)
+            if subset:
+                obj.select = True
+
+    @staticmethod
+    def _deselect_all(context):
+        # deselect all objects
+        for obj in context.scene.objects:
+            obj.select = False
 
 
 # OPERATORS
@@ -45,9 +61,10 @@ class MaterialSelect_OT_find_any(Operator):
     def execute(self, context):
         MaterialSelect.find_any(
             context=context,
-            obj=context.active_object
+            src_obj=context.active_object
         )
         return {'FINISHED'}
+
 
 class MaterialSelect_OT_find_matching(Operator):
     bl_idname = 'materialselect.find_matching'
@@ -57,7 +74,7 @@ class MaterialSelect_OT_find_matching(Operator):
     def execute(self, context):
         MaterialSelect.find_matching(
             context=context,
-            obj=context.active_object
+            src_obj=context.active_object
         )
         return {'FINISHED'}
 
