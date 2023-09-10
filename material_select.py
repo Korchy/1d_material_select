@@ -27,22 +27,30 @@ class MaterialSelect:
     @classmethod
     def find_any(cls, context, src_obj):
         # select objects which has one or more materials from obj
-        cls._deselect_all(context=context)
-        for obj in context.blend_data.objects:
-            # check at least one material from scr_obj in obj
-            disjoint = not set(src_obj.data.materials).isdisjoint(obj.data.materials)
-            if disjoint:
-                obj.select = True
+        if src_obj:
+            cls._deselect_all(context=context)
+            checking_objects = (obj for obj in context.blend_data.objects if obj.type == 'MESH')
+            for obj in checking_objects:
+                # check at least one material from scr_obj in obj
+                disjoint = not set(src_obj.data.materials).isdisjoint(obj.data.materials)
+                if disjoint:
+                    obj.select = True
+        else:
+            print('ERR: no active object')
 
     @classmethod
     def find_matching(cls, context, src_obj):
         # select objects which has all materials from obj
-        cls._deselect_all(context=context)
-        for obj in context.blend_data.objects:
-            # check all materials from src_obj in obj
-            subset = set(src_obj.data.materials).issubset(obj.data.materials)
-            if subset:
-                obj.select = True
+        if src_obj:
+            cls._deselect_all(context=context)
+            checking_objects = (obj for obj in context.blend_data.objects if obj.type == 'MESH')
+            for obj in checking_objects:
+                # check all materials from src_obj in obj
+                subset = set(src_obj.data.materials).issubset(obj.data.materials)
+                if subset:
+                    obj.select = True
+        else:
+            print('ERR: no active object')
 
     @staticmethod
     def _deselect_all(context):
