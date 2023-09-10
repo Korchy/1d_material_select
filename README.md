@@ -14,11 +14,19 @@ Select objects that have at least one same material as an active object.
 
 Select objects that have all material as an active object.
 
+**Exact Number**
+
+If "Exact Number" option is on, searching is made for all materials without numeric postfixes (.001).
+Ex: "Material.001", "Material.002" and "Material" will be find in search.
+
 Blender version
 -
 2.79
 
 Version history
 -
+1.0.1
+- "Exact Number" functional added
+
 1.0.0
 - Release
