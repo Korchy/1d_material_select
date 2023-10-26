@@ -25,6 +25,9 @@ Blender version
 
 Version history
 -
+1.1.0
+- Added new option "Find Exact Mats" for finding objects with fully equal materials lists
+
 1.0.1
 - "Exact Number" functional added
 
