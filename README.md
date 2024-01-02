@@ -25,6 +25,9 @@ Blender version
 
 Version history
 -
+1.1.1
+- Integrated to the NA 1D Tools
+
 1.1.0
 - Added new option "Find Exact Mats" for finding objects with fully equal materials lists
 

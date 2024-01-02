@@ -13,7 +13,7 @@ bl_info = {
     "name": "Material 1D Select",
     "description": "Selects all objects with the same material on active object",
     "author": "Nikita Akimov, Paul Kotelevets",
-    "version": (1, 1, 0),
+    "version": (1, 1, 1),
     "blender": (2, 79, 0),
     "location": "View3D > Tool panel > 1D > Vertical Vertices",
     "doc_url": "https://github.com/Korchy/1d_material_select",
@@ -103,6 +103,29 @@ class MaterialSelect:
         regexp = re.compile(r'(\.\d{3}$)')
         return regexp.split(name)[0]
 
+    @staticmethod
+    def ui(layout, context):
+        # ui panel
+        op = layout.operator(
+            operator='materialselect.find_any',
+            icon='IMAGE_RGB_ALPHA'
+        )
+        op.exact_number = context.scene.material_select_exact_number
+        op = layout.operator(
+            operator='materialselect.find_matching',
+            icon='SEQ_PREVIEW'
+        )
+        op.exact_number = context.scene.material_select_exact_number
+        op = layout.operator(
+            operator='materialselect.find_exact',
+            icon='POTATO'
+        )
+        op.exact_number = context.scene.material_select_exact_number
+        layout.prop(
+            data=context.scene,
+            property='material_select_exact_number'
+        )
+
 
 # OPERATORS
 
@@ -175,34 +198,18 @@ class MaterialSelect_PT_panel(Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_label = 'Material 1D Select'
-    bl_category = '1D'
+    bl_category = 'NA 1D TOOLS'
 
     def draw(self, context):
-        layout = self.layout
-        op = layout.operator(
-            operator='materialselect.find_any',
-            icon='IMAGE_RGB_ALPHA'
-        )
-        op.exact_number = context.scene.material_select_exact_number
-        op = layout.operator(
-            operator='materialselect.find_matching',
-            icon='SEQ_PREVIEW'
-        )
-        op.exact_number = context.scene.material_select_exact_number
-        op = layout.operator(
-            operator='materialselect.find_exact',
-            icon='POTATO'
-        )
-        op.exact_number = context.scene.material_select_exact_number
-        layout.prop(
-            data=context.scene,
-            property='material_select_exact_number'
+        MaterialSelect.ui(
+            layout=self.layout,
+            context=context
         )
 
 
 # REGISTER
 
-def register():
+def register(ui=True):
     Scene.material_select_exact_number = BoolProperty(
         name='Exact Number',
         description='Process material clone suffixes exactly, ignore suffixes when turned off',
@@ -211,11 +218,13 @@ def register():
     register_class(MaterialSelect_OT_find_any)
     register_class(MaterialSelect_OT_find_matching)
     register_class(MaterialSelect_OT_find_exact)
-    register_class(MaterialSelect_PT_panel)
+    if ui:
+        register_class(MaterialSelect_PT_panel)
 
 
-def unregister():
-    unregister_class(MaterialSelect_PT_panel)
+def unregister(ui=True):
+    if ui:
+        unregister_class(MaterialSelect_PT_panel)
     unregister_class(MaterialSelect_OT_find_exact)
     unregister_class(MaterialSelect_OT_find_matching)
     unregister_class(MaterialSelect_OT_find_any)
