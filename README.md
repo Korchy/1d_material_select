@@ -19,12 +19,29 @@ Select objects that have all material as an active object.
 If "Exact Number" option is on, searching is made for all materials without numeric postfixes (.001).
 Ex: "Material.001", "Material.002" and "Material" will be find in search.
 
+**Principled to Viewport**
+
+For all materials in the scene if the material has the "PrincipledBSDF" node copy its "Base Color" input color to the Material Viewport color
+
+**Viewport to Principled**
+
+For all materials in the scene if the material has the "PrincipledBSDF" node copy the Material Viewport color to the "PrincipledBSDF" node "Base Color" input color
+
+Current version
+-
+1.2.0.
+
 Blender version
 -
 2.79
 
 Version history
 -
+1.2.0
+- Added two functions:
+  - copy Principled BSDF node Base Color input color to the Material Viewport color
+  - copy the Material Viewport color to the Principled BSDF node Base Color input color
+
 1.1.1
 - Integrated to the NA 1D Tools
 

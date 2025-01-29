@@ -13,7 +13,7 @@ bl_info = {
     "name": "Material 1D Select",
     "description": "Selects all objects with the same material on active object",
     "author": "Nikita Akimov, Paul Kotelevets",
-    "version": (1, 1, 1),
+    "version": (1, 2, 0),
     "blender": (2, 79, 0),
     "location": "View3D > Tool panel > 1D > Vertical Vertices",
     "doc_url": "https://github.com/Korchy/1d_material_select",
@@ -92,6 +92,28 @@ class MaterialSelect:
             print('ERR: no active object')
 
     @staticmethod
+    def principled_color_to_viewport(context):
+        # copy Principled BSDF node Base Color input color to the Material Viewport color
+        # for each material
+        for material in context.blend_data.materials:
+            # check if it has PrincipledBSDF node
+            principled_node = material.node_tree.nodes.get('Principled BSDF')
+            if principled_node:
+                # copy Base Color from node to the material Viewport color
+                material.diffuse_color = principled_node.inputs['Base Color'].default_value[:3]
+
+    @staticmethod
+    def viewport_color_to_principled(context):
+        # copy the Material Viewport color to the Principled BSDF node Base Color input color
+        # for each material
+        for material in context.blend_data.materials:
+            # check if it has PrincipledBSDF node
+            principled_node = material.node_tree.nodes.get('Principled BSDF')
+            if principled_node:
+                # copy the material Viewport color to the Base Color input of the PrincipledGSDF node
+                principled_node.inputs['Base Color'].default_value = material.diffuse_color[:] + (1.0, )
+
+    @staticmethod
     def _deselect_all(context):
         # deselect all objects
         for obj in context.scene.objects:
@@ -106,24 +128,38 @@ class MaterialSelect:
     @staticmethod
     def ui(layout, context):
         # ui panel
-        op = layout.operator(
+        # find operators
+        box = layout.box()
+        op = box.operator(
             operator='materialselect.find_any',
             icon='IMAGE_RGB_ALPHA'
         )
         op.exact_number = context.scene.material_select_exact_number
-        op = layout.operator(
+        op = box.operator(
             operator='materialselect.find_matching',
             icon='SEQ_PREVIEW'
         )
         op.exact_number = context.scene.material_select_exact_number
-        op = layout.operator(
+        op = box.operator(
             operator='materialselect.find_exact',
             icon='POTATO'
         )
         op.exact_number = context.scene.material_select_exact_number
-        layout.prop(
+        box.prop(
             data=context.scene,
             property='material_select_exact_number'
+        )
+        # material operators
+        box = layout.box()
+        box.operator(
+            operator='materialselect.principled_color_to_viewport',
+            icon='RESTRICT_COLOR_ON',
+            text='Principled color to Viewport'
+        )
+        box.operator(
+            operator='materialselect.viewport_color_to_principled',
+            icon='GROUP_VCOL',
+            text='Viewport color to Principled'
         )
 
 
@@ -192,6 +228,30 @@ class MaterialSelect_OT_find_exact(Operator):
         return {'FINISHED'}
 
 
+class MaterialSelect_OT_principled_color_to_viewport(Operator):
+    bl_idname = 'materialselect.principled_color_to_viewport'
+    bl_label = 'PrincipledBSDF to Viewport Color'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        MaterialSelect.principled_color_to_viewport(
+            context=context
+        )
+        return {'FINISHED'}
+
+
+class MaterialSelect_OT_viewport_color_to_principled(Operator):
+    bl_idname = 'materialselect.viewport_color_to_principled'
+    bl_label = 'Viewport Color to PrincipledBSDF'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        MaterialSelect.viewport_color_to_principled(
+            context=context
+        )
+        return {'FINISHED'}
+
+
 # PANELS
 
 class MaterialSelect_PT_panel(Panel):
@@ -218,6 +278,8 @@ def register(ui=True):
     register_class(MaterialSelect_OT_find_any)
     register_class(MaterialSelect_OT_find_matching)
     register_class(MaterialSelect_OT_find_exact)
+    register_class(MaterialSelect_OT_principled_color_to_viewport)
+    register_class(MaterialSelect_OT_viewport_color_to_principled)
     if ui:
         register_class(MaterialSelect_PT_panel)
 
@@ -225,6 +287,8 @@ def register(ui=True):
 def unregister(ui=True):
     if ui:
         unregister_class(MaterialSelect_PT_panel)
+    unregister_class(MaterialSelect_OT_viewport_color_to_principled)
+    unregister_class(MaterialSelect_OT_principled_color_to_viewport)
     unregister_class(MaterialSelect_OT_find_exact)
     unregister_class(MaterialSelect_OT_find_matching)
     unregister_class(MaterialSelect_OT_find_any)
