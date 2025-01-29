@@ -96,22 +96,24 @@ class MaterialSelect:
         # copy Principled BSDF node Base Color input color to the Material Viewport color
         # for each material
         for material in context.blend_data.materials:
-            # check if it has PrincipledBSDF node
-            principled_node = material.node_tree.nodes.get('Principled BSDF')
-            if principled_node:
-                # copy Base Color from node to the material Viewport color
-                material.diffuse_color = principled_node.inputs['Base Color'].default_value[:3]
+            if material.node_tree:
+                # check if it has PrincipledBSDF node
+                principled_node = material.node_tree.nodes.get('Principled BSDF')
+                if principled_node:
+                    # copy Base Color from node to the material Viewport color
+                    material.diffuse_color = principled_node.inputs['Base Color'].default_value[:3]
 
     @staticmethod
     def viewport_color_to_principled(context):
         # copy the Material Viewport color to the Principled BSDF node Base Color input color
         # for each material
         for material in context.blend_data.materials:
-            # check if it has PrincipledBSDF node
-            principled_node = material.node_tree.nodes.get('Principled BSDF')
-            if principled_node:
-                # copy the material Viewport color to the Base Color input of the PrincipledGSDF node
-                principled_node.inputs['Base Color'].default_value = material.diffuse_color[:] + (1.0, )
+            if material.node_tree:
+                # check if it has PrincipledBSDF node
+                principled_node = material.node_tree.nodes.get('Principled BSDF')
+                if principled_node:
+                    # copy the material Viewport color to the Base Color input of the PrincipledGSDF node
+                    principled_node.inputs['Base Color'].default_value = material.diffuse_color[:] + (1.0, )
 
     @staticmethod
     def _deselect_all(context):
