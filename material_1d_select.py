@@ -131,9 +131,9 @@ class MaterialSelect:
                                        if node.type == 'TEX_IMAGE' and node.image]
                 # print(list(image_texture_nodes))
                 if mode == 'LONGEST_NAME':
-                    node_data = min(image_texture_nodes, key=lambda _t: _t[2]) if image_texture_nodes else None
+                    node_data = max(image_texture_nodes, key=lambda _t: _t[2]) if image_texture_nodes else None
                 elif mode == 'LONGEST_SIZE':
-                    node_data = min(image_texture_nodes, key=lambda _t: _t[1]) if image_texture_nodes else None
+                    node_data = max(image_texture_nodes, key=lambda _t: _t[1]) if image_texture_nodes else None
                 else:
                     node_data = image_texture_nodes[0] if image_texture_nodes else None
                 # for founded node
