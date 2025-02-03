@@ -135,7 +135,7 @@ class MaterialSelect:
                 elif mode == 'LONGEST_SIZE':
                     node_data = min(image_texture_nodes, key=lambda _t: _t[1]) if image_texture_nodes else None
                 else:
-                    node_data = next(image_texture_nodes, None)
+                    node_data = image_texture_nodes[0] if image_texture_nodes else None
                 # for founded node
                 if node_data:
                     node = node_data[0]
