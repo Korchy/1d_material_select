@@ -126,7 +126,7 @@ class MaterialSelect:
                 image_texture_node = next((node for node in material.node_tree.nodes if node.type == 'TEX_IMAGE'), None)
                 if image_texture_node and image_texture_node.image:
                     texture_path = image_texture_node.image.filepath    # '//textures\\T_EdvardaGriga_4A_001_d_1.png'
-                    texture_name = bpy.path.display_name_from_filepath(texture_path)
+                    texture_name = bpy.path.basename(texture_path)
                     if texture_name:
                         material.name = texture_name
 
