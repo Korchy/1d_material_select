@@ -37,7 +37,7 @@ For all selected objects for all materials in the object - if the material has t
 
 Current version
 -
-1.3.0.
+1.3.1.
 
 Blender version
 -
@@ -45,6 +45,10 @@ Blender version
 
 Version history
 -
+1.3.1
+- Updated "Texture name to Material name" work
+- Updated "Unpack textures to Material folders" work
+
 1.3.0
 - Added "Texture name to Material name" function
 - Added "Unpack textures to Material folders" function

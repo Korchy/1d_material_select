@@ -4,10 +4,12 @@
 # GitHub
 #    https://github.com/Korchy/1d_material_select
 
+from functools import reduce
+from operator import mul
 import os
 import re
 import bpy
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, EnumProperty
 from bpy.types import Operator, Panel, Scene
 from bpy.utils import register_class, unregister_class
 
@@ -15,7 +17,7 @@ bl_info = {
     "name": "Material 1D Select",
     "description": "Selects all objects with the same material on active object",
     "author": "Nikita Akimov, Paul Kotelevets",
-    "version": (1, 3, 0),
+    "version": (1, 3, 1),
     "blender": (2, 79, 0),
     "location": "View3D > Tool panel > 1D > Vertical Vertices",
     "doc_url": "https://github.com/Korchy/1d_material_select",
@@ -118,14 +120,25 @@ class MaterialSelect:
                     principled_node.inputs['Base Color'].default_value = material.diffuse_color[:] + (1.0, )
 
     @staticmethod
-    def texture_name_to_material(context):
+    def texture_name_to_material(context, mode):
         # if material has an Image Texture node with a texture loaded - copy the texture name to the material name
         # for each material on each selected object
         for obj in (_obj for _obj in context.selected_objects if _obj.data and hasattr(_obj.data, 'materials')):
             for material in (_mat for _mat in obj.data.materials if _mat.node_tree):
-                image_texture_node = next((node for node in material.node_tree.nodes if node.type == 'TEX_IMAGE'), None)
-                if image_texture_node and image_texture_node.image:
-                    texture_path = image_texture_node.image.filepath    # '//textures\\T_EdvardaGriga_4A_001_d_1.png'
+                # list of nodes with image texture and texture loaded to it
+                image_texture_nodes = ((node, reduce(mul, node.image.size), len(bpy.path.basename(node.image.filepath)))
+                                       for node in material.node_tree.nodes
+                                       if node.type == 'TEX_IMAGE' and node.image)
+                if mode == 'LONGEST_NAME':
+                    node_data = min(image_texture_nodes, key=lambda _t: _t[2]) if image_texture_nodes else None
+                elif mode == 'LONGEST_SIZE':
+                    node_data = min(image_texture_nodes, key=lambda _t: _t[1]) if image_texture_nodes else None
+                else:
+                    node_data = next(image_texture_nodes, None)
+                # for founded node
+                if node_data:
+                    node = node_data[0]
+                    texture_path = node.image.filepath  # '//textures\\T_EdvardaGriga_4A_001_d_1.png'
                     texture_name = bpy.path.basename(texture_path)
                     if texture_name:
                         material.name = texture_name
@@ -137,14 +150,14 @@ class MaterialSelect:
         current_dir = os.path.dirname(bpy.path.abspath(bpy.data.filepath))
         for obj in (_obj for _obj in context.selected_objects if _obj.data and hasattr(_obj.data, 'materials')):
             for material in (_mat for _mat in obj.data.materials if _mat.node_tree):
-                # create directory with the material name
                 material_dir = os.path.join(current_dir, '_textures', material.name)
-                if not os.path.isdir(material_dir):
-                    os.makedirs(material_dir)
                 # for each Image Texture node in the material
                 image_texture_nodes = (node for node in material.node_tree.nodes
                                        if node.type == 'TEX_IMAGE' and node.image)
                 for node in image_texture_nodes:
+                    # create directory with the material name only if this material has a texture
+                    if not os.path.isdir(material_dir):
+                        os.makedirs(material_dir)
                     # save image texture to the material directory
                     image_texture_name = bpy.path.basename(node.image.filepath)
                     # change filepath for saving
@@ -201,12 +214,20 @@ class MaterialSelect:
         )
         # texture operators
         box = layout.box()
-        box.operator(
+        op = box.operator(
             operator='materialselect.texture_name_to_material',
             icon='FORCE_TEXTURE',
             text='Texture name to Material'
         )
-        box.operator(
+        op.t2m_mode = context.scene.material_select_prop_t2m_mode
+        row = box.row()
+        row.prop(
+            data=context.scene,
+            property='material_select_prop_t2m_mode',
+            expand=True
+        )
+        # unpack operator
+        layout.operator(
             operator='materialselect.unpack_textures_to_mat',
             icon='PACKAGE',
             text='Unpack textures by Material'
@@ -307,9 +328,20 @@ class MaterialSelect_OT_texture_name_to_material(Operator):
     bl_label = 'Texture name to Material name'
     bl_options = {'REGISTER', 'UNDO'}
 
+    t2m_mode = EnumProperty(
+        name='Texture to Material mode',
+        items=[
+            ('RANDOM', 'RANDOM', 'RANDOM', '', 0),
+            ('LONGEST_NAME', 'NAME', 'LONGEST NAME', '', 1),
+            ('LONGEST_SIZE', 'SIZE', 'LONGEST SIZE', '', 2)
+        ],
+        default='LONGEST_SIZE'
+    )
+
     def execute(self, context):
         MaterialSelect.texture_name_to_material(
-            context=context
+            context=context,
+            mode=self.t2m_mode
         )
         return {'FINISHED'}
 
@@ -344,6 +376,15 @@ class MaterialSelect_PT_panel(Panel):
 # REGISTER
 
 def register(ui=True):
+    Scene.material_select_prop_t2m_mode = EnumProperty(
+        name='Texture to Material mode',
+        items=[
+            ('RANDOM', 'RANDOM', 'RANDOM', '', 0),
+            ('LONGEST_NAME', 'NAME', 'LONGEST NAME', '', 1),
+            ('LONGEST_SIZE', 'SIZE', 'LONGEST SIZE', '', 2)
+        ],
+        default='LONGEST_SIZE'
+    )
     Scene.material_select_exact_number = BoolProperty(
         name='Exact Number',
         description='Process material clone suffixes exactly, ignore suffixes when turned off',
@@ -371,6 +412,7 @@ def unregister(ui=True):
     unregister_class(MaterialSelect_OT_find_matching)
     unregister_class(MaterialSelect_OT_find_any)
     del Scene.material_select_exact_number
+    del Scene.material_select_prop_t2m_mode
 
 
 if __name__ == "__main__":
