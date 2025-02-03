@@ -126,9 +126,10 @@ class MaterialSelect:
         for obj in (_obj for _obj in context.selected_objects if _obj.data and hasattr(_obj.data, 'materials')):
             for material in (_mat for _mat in obj.data.materials if _mat.node_tree):
                 # list of nodes with image texture and texture loaded to it
-                image_texture_nodes = ((node, reduce(mul, node.image.size), len(bpy.path.basename(node.image.filepath)))
+                image_texture_nodes = [(node, reduce(mul, node.image.size), len(bpy.path.basename(node.image.filepath)))
                                        for node in material.node_tree.nodes
-                                       if node.type == 'TEX_IMAGE' and node.image)
+                                       if node.type == 'TEX_IMAGE' and node.image]
+                print(list(image_texture_nodes))
                 if mode == 'LONGEST_NAME':
                     node_data = min(image_texture_nodes, key=lambda _t: _t[2]) if image_texture_nodes else None
                 elif mode == 'LONGEST_SIZE':
