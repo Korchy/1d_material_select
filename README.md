@@ -27,9 +27,17 @@ For all materials in the scene if the material has the "PrincipledBSDF" node cop
 
 For all materials in the scene if the material has the "PrincipledBSDF" node copy the Material Viewport color to the "PrincipledBSDF" node "Base Color" input color
 
+**Texture name to Material name**
+
+For all selected objects for all materials in the object - if the material has the Image Texture node with loaded texture, the name of this texture applies to the material name.
+
+**Unpack textures to Material folders**
+
+For all selected objects for all materials in the object - if the material has the Image Texture node with loaded texture, the name of this texture unpack this texture to the folder with the current material name.
+
 Current version
 -
-1.2.0.
+1.3.0.
 
 Blender version
 -
@@ -37,6 +45,10 @@ Blender version
 
 Version history
 -
+1.3.0
+- Added "Texture name to Material name" function
+- Added "Unpack textures to Material folders" function
+
 1.2.0
 - Added two functions:
   - copy Principled BSDF node Base Color input color to the Material Viewport color

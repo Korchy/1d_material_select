@@ -4,7 +4,9 @@
 # GitHub
 #    https://github.com/Korchy/1d_material_select
 
+import os
 import re
+import bpy
 from bpy.props import BoolProperty
 from bpy.types import Operator, Panel, Scene
 from bpy.utils import register_class, unregister_class
@@ -13,7 +15,7 @@ bl_info = {
     "name": "Material 1D Select",
     "description": "Selects all objects with the same material on active object",
     "author": "Nikita Akimov, Paul Kotelevets",
-    "version": (1, 2, 0),
+    "version": (1, 3, 0),
     "blender": (2, 79, 0),
     "location": "View3D > Tool panel > 1D > Vertical Vertices",
     "doc_url": "https://github.com/Korchy/1d_material_select",
@@ -116,6 +118,40 @@ class MaterialSelect:
                     principled_node.inputs['Base Color'].default_value = material.diffuse_color[:] + (1.0, )
 
     @staticmethod
+    def texture_name_to_material(context):
+        # if material has an Image Texture node with a texture loaded - copy the texture name to the material name
+        # for each material on each selected object
+        for obj in (_obj for _obj in context.selected_objects if _obj.data and hasattr(_obj.data, 'materials')):
+            for material in (_mat for _mat in obj.data.materials if _mat.node_tree):
+                image_texture_node = next((node for node in material.node_tree.nodes if node.type == 'TEX_IMAGE'), None)
+                if image_texture_node and image_texture_node.image:
+                    texture_path = image_texture_node.image.filepath    # '//textures\\T_EdvardaGriga_4A_001_d_1.png'
+                    texture_name = bpy.path.display_name_from_filepath(texture_path)
+                    if texture_name:
+                        material.name = texture_name
+
+    @staticmethod
+    def unpack_textures_to_mat(context):
+        # if material has an Image Texture node with a texture loaded - unpack this texture to the folder with the material name
+        # for each material on each selected object
+        current_dir = os.path.dirname(bpy.path.abspath(bpy.data.filepath))
+        for obj in (_obj for _obj in context.selected_objects if _obj.data and hasattr(_obj.data, 'materials')):
+            for material in (_mat for _mat in obj.data.materials if _mat.node_tree):
+                # create directory with the material name
+                material_dir = os.path.join(current_dir, material.name)
+                if not os.path.isdir(material_dir):
+                    os.makedirs(material_dir)
+                # for each Image Texture node in the material
+                image_texture_nodes = (node for node in material.node_tree.nodes
+                                       if node.type == 'TEX_IMAGE' and node.image)
+                for node in image_texture_nodes:
+                    # save image texture to the material directory
+                    image_texture_name = bpy.path.basename(node.image.filepath)
+                    # change filepath for saving
+                    node.image.filepath = os.path.join(material_dir, image_texture_name)
+                    node.image.save() # saves by the current .filepath
+
+    @staticmethod
     def _deselect_all(context):
         # deselect all objects
         for obj in context.scene.objects:
@@ -162,6 +198,18 @@ class MaterialSelect:
             operator='materialselect.viewport_color_to_principled',
             icon='GROUP_VCOL',
             text='Viewport color to Principled'
+        )
+        # texture operators
+        box = layout.box()
+        box.operator(
+            operator='materialselect.texture_name_to_material',
+            icon='FORCE_TEXTURE',
+            text='Texture name to Material'
+        )
+        box.operator(
+            operator='materialselect.unpack_textures_to_mat',
+            icon='PACKAGE',
+            text='Unpack textures by Material'
         )
 
 
@@ -254,6 +302,30 @@ class MaterialSelect_OT_viewport_color_to_principled(Operator):
         return {'FINISHED'}
 
 
+class MaterialSelect_OT_texture_name_to_material(Operator):
+    bl_idname = 'materialselect.texture_name_to_material'
+    bl_label = 'Texture name to Material name'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        MaterialSelect.texture_name_to_material(
+            context=context
+        )
+        return {'FINISHED'}
+
+
+class MaterialSelect_OT_unpack_textures_to_mat(Operator):
+    bl_idname = 'materialselect.unpack_textures_to_mat'
+    bl_label = 'Unpack textures by Materials folders'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        MaterialSelect.unpack_textures_to_mat(
+            context=context
+        )
+        return {'FINISHED'}
+
+
 # PANELS
 
 class MaterialSelect_PT_panel(Panel):
@@ -282,6 +354,8 @@ def register(ui=True):
     register_class(MaterialSelect_OT_find_exact)
     register_class(MaterialSelect_OT_principled_color_to_viewport)
     register_class(MaterialSelect_OT_viewport_color_to_principled)
+    register_class(MaterialSelect_OT_texture_name_to_material)
+    register_class(MaterialSelect_OT_unpack_textures_to_mat)
     if ui:
         register_class(MaterialSelect_PT_panel)
 
@@ -289,6 +363,8 @@ def register(ui=True):
 def unregister(ui=True):
     if ui:
         unregister_class(MaterialSelect_PT_panel)
+    unregister_class(MaterialSelect_OT_unpack_textures_to_mat)
+    unregister_class(MaterialSelect_OT_texture_name_to_material)
     unregister_class(MaterialSelect_OT_viewport_color_to_principled)
     unregister_class(MaterialSelect_OT_principled_color_to_viewport)
     unregister_class(MaterialSelect_OT_find_exact)
