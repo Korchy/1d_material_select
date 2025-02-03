@@ -138,7 +138,7 @@ class MaterialSelect:
         for obj in (_obj for _obj in context.selected_objects if _obj.data and hasattr(_obj.data, 'materials')):
             for material in (_mat for _mat in obj.data.materials if _mat.node_tree):
                 # create directory with the material name
-                material_dir = os.path.join(current_dir, material.name)
+                material_dir = os.path.join(current_dir, '_textures', material.name)
                 if not os.path.isdir(material_dir):
                     os.makedirs(material_dir)
                 # for each Image Texture node in the material
