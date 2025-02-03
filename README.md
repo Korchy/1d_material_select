@@ -37,7 +37,7 @@ For all selected objects for all materials in the object - if the material has t
 
 Current version
 -
-1.3.1.
+1.3.2.
 
 Blender version
 -
@@ -45,6 +45,9 @@ Blender version
 
 Version history
 -
+1.3.2
+- Modes for "Texture name to Material name": RANDOM, MAX_SIZE, MIN_SIZE, MAX_NAME, MIN_NAME
+
 1.3.1
 - Updated "Texture name to Material name" work
 - Updated "Unpack textures to Material folders" work

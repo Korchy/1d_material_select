@@ -17,7 +17,7 @@ bl_info = {
     "name": "Material 1D Select",
     "description": "Selects all objects with the same material on active object",
     "author": "Nikita Akimov, Paul Kotelevets",
-    "version": (1, 3, 1),
+    "version": (1, 3, 2),
     "blender": (2, 79, 0),
     "location": "View3D > Tool panel > 1D > Vertical Vertices",
     "doc_url": "https://github.com/Korchy/1d_material_select",
@@ -126,19 +126,24 @@ class MaterialSelect:
         for obj in (_obj for _obj in context.selected_objects if _obj.data and hasattr(_obj.data, 'materials')):
             for material in (_mat for _mat in obj.data.materials if _mat.node_tree):
                 # list of nodes with image texture and texture loaded to it
+                # [(node, image_size, image_name), ...]
                 image_texture_nodes = [(node, reduce(mul, node.image.size), len(bpy.path.basename(node.image.filepath)))
                                        for node in material.node_tree.nodes
                                        if node.type == 'TEX_IMAGE' and node.image]
                 # print(list(image_texture_nodes))
                 if mode == 'LONGEST_NAME':
                     node_data = max(image_texture_nodes, key=lambda _t: _t[2]) if image_texture_nodes else None
+                elif mode == 'SHORTEST_NAME':
+                    node_data = min(image_texture_nodes, key=lambda _t: _t[2]) if image_texture_nodes else None
                 elif mode == 'LONGEST_SIZE':
                     node_data = max(image_texture_nodes, key=lambda _t: _t[1]) if image_texture_nodes else None
+                elif mode == 'SHORTEST_SIZE':
+                    node_data = min(image_texture_nodes, key=lambda _t: _t[1]) if image_texture_nodes else None
                 else:
                     node_data = image_texture_nodes[0] if image_texture_nodes else None
                 # for founded node
                 if node_data:
-                    node = node_data[0]
+                    node = node_data[0] # (node, image_size, image_name)
                     texture_path = node.image.filepath  # '//textures\\T_EdvardaGriga_4A_001_d_1.png'
                     texture_name = bpy.path.basename(texture_path)
                     if texture_name:
@@ -163,7 +168,10 @@ class MaterialSelect:
                     image_texture_name = bpy.path.basename(node.image.filepath)
                     # change filepath for saving
                     node.image.filepath = os.path.join(material_dir, image_texture_name)
-                    node.image.save() # saves by the current .filepath
+                    try:
+                        node.image.save() # saves by the current .filepath
+                    except Exception as err:
+                        print('ERR: Cant save texture', image_texture_name, 'from material', material.name, 'to', node.image.filepath)
 
     @staticmethod
     def _deselect_all(context):
@@ -225,7 +233,8 @@ class MaterialSelect:
         row.prop(
             data=context.scene,
             property='material_select_prop_t2m_mode',
-            expand=True
+            expand=False,
+            text=''
         )
         # unpack operator
         layout.operator(
@@ -333,8 +342,10 @@ class MaterialSelect_OT_texture_name_to_material(Operator):
         name='Texture to Material mode',
         items=[
             ('RANDOM', 'RANDOM', 'RANDOM', '', 0),
-            ('LONGEST_NAME', 'NAME', 'LONGEST NAME', '', 1),
-            ('LONGEST_SIZE', 'SIZE', 'LONGEST SIZE', '', 2)
+            ('LONGEST_NAME', 'LONGEST NAME', 'LONGEST NAME', '', 1),
+            ('SHORTEST_NAME', 'SHORTEST NAME', 'SHORTEST NAME', '', 2),
+            ('LONGEST_SIZE', 'MAX SIZE', 'LONGEST SIZE', '', 3),
+            ('SHORTEST_SIZE', 'MIN SIZE', 'SHORTEST SIZE', '', 4)
         ],
         default='LONGEST_SIZE'
     )
@@ -381,8 +392,10 @@ def register(ui=True):
         name='Texture to Material mode',
         items=[
             ('RANDOM', 'RANDOM', 'RANDOM', '', 0),
-            ('LONGEST_NAME', 'NAME', 'LONGEST NAME', '', 1),
-            ('LONGEST_SIZE', 'SIZE', 'LONGEST SIZE', '', 2)
+            ('LONGEST_NAME', 'LONGEST NAME', 'LONGEST NAME', '', 1),
+            ('SHORTEST_NAME', 'SHORTEST NAME', 'SHORTEST NAME', '', 2),
+            ('LONGEST_SIZE', 'MAX SIZE', 'LONGEST SIZE', '', 3),
+            ('SHORTEST_SIZE', 'MIN SIZE', 'SHORTEST SIZE', '', 4)
         ],
         default='LONGEST_SIZE'
     )
