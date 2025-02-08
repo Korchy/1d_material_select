@@ -35,9 +35,21 @@ For all selected objects for all materials in the object - if the material has t
 
 For all selected objects for all materials in the object - if the material has the Image Texture node with loaded texture, the name of this texture unpack this texture to the folder with the current material name.
 
+**Material Prefix**
+
+For each material on the active object change the prefix of the material name
+
+**Sort Material by Area**
+
+Sort materials on the active object by the whole area of the material on all selected objects
+
+**Hue Material Viewport Color**
+
+Multiply Hue of the Material Viewport Color by a certain value for each material on the active object
+
 Current version
 -
-1.3.2.
+1.4.0.
 
 Blender version
 -
@@ -45,6 +57,10 @@ Blender version
 
 Version history
 -
+1.4.0
+- "Material Prefix" added
+- "Sort Material by Area" added
+
 1.3.2
 - Modes for "Texture name to Material name": RANDOM, MAX_SIZE, MIN_SIZE, MAX_NAME, MIN_NAME
 
