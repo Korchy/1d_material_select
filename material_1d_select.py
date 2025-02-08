@@ -183,53 +183,57 @@ class MaterialSelect:
             # add new prefix
             material.name = prefix_to + material.name
 
-    @staticmethod
-    def sort_by_area(context, op):
+    @classmethod
+    def sort_by_area(cls, context, op):
         # sort materials on the active object by the whole area of the material on all selected objects
         # switch to the OBJECT mode
         mode = context.object.mode
         if mode == 'EDIT':
             bpy.ops.object.mode_set(mode='OBJECT')
         # count an area of all polygons by used material
-        # materials_area = {'blue': 52.0, 'white': 20.0, 'Material': 4.0, ...}
-        materials_area = {}
+        # ['cyan', 'blue', 'None'] - None for empty slots
+        active_obj_materials = [cls._material_name(_material) \
+                                for _material in context.active_object.data.materials]
+        # print('aom', active_obj_materials)
+        # active_obj_materials_weights = {'blue': 0.0, 'cyan': 0.0, 'None': 0.0}
+        active_obj_materials_weights = {_k: 0.0 for _k in active_obj_materials}
+        # print('aom_weights', active_obj_materials_weights)
+        # for each selected object
+        # active_obj_materials_weights = {'cyan': 20.0, 'blue': 52.0, 'None': 4.0}
         for obj in (_obj for _obj in context.selected_objects if _obj.type == 'MESH' and _obj.data.materials):
+            # for each polygon with applied material
             for polygon in obj.data.polygons:
-                if obj.data.materials[polygon.material_index]:
-                    material_name = obj.data.materials[polygon.material_index].name
-                    if material_name in materials_area:
-                        materials_area[material_name] += polygon.area
-                    else:
-                        materials_area[material_name] = polygon.area
-        # ['cyan', 'blue', 'red'] - not sorted by area
-        active_obj_materials = [_material.name for _material in context.active_object.data.materials if _material]
-        # {'blue': 52.0, 'cyan': 112.0, 'red': 36.0} values got from materials_area
-        active_obj_materials_weights = {_k: materials_area[_k] for _k in active_obj_materials}
-        # ['red', 'blue', 'cyan'] - sorted by area
+                polygon_material_name = cls._material_name(obj.data.materials[polygon.material_index])
+                # only for active object materials
+                if polygon_material_name in active_obj_materials_weights:
+                    active_obj_materials_weights[polygon_material_name] += polygon.area
+        # print('active_obj_materials_weights', active_obj_materials_weights)
         active_obj_materials_sorted = sorted(active_obj_materials_weights, key=active_obj_materials_weights.get)
         # report
         op.report(
             type={'INFO'},
             message='Active object material weights: '
-                    + str([name + ': ' + str(materials_area[name]) for name in active_obj_materials_sorted])
+                    # + str([_item[1] + ': ' + str(round(_item[2], 1)) for _item in active_obj_materials_sorted])
+                    + str([name + ': ' + str(active_obj_materials_weights[name]) for name in active_obj_materials_sorted])
         )
+        # extend to all material slots
+        #   [(index, name, weight), ...]
+        #   [(0, 'cyan', 20.0), (1, 'blue', 52.0, (2, 'None', 4.0)]
+        active_obj_materials_i = [
+            (_i, cls._material_name(_material), active_obj_materials_weights[cls._material_name(_material)])
+            for _i, _material in enumerate(context.active_object.data.materials)
+        ]
+        # print('aom_w_i', active_obj_materials_i)
+        # [(2, 'None', 4.0), (0, 'cyan', 20.0), (1, 'blue', 52.0]
+        active_obj_materials_sorted = sorted(active_obj_materials_i, key=lambda _item: _item[2])
+        # print('aom_sorted', active_obj_materials_sorted)
         # sort materials in object's material_slots by weight
-        #   using bpy.ops.object.material_slot_move() because can't find more simple way
-        for _i, mat_name in enumerate(active_obj_materials_sorted):
-            # set active material slot to end slot
-            context.object.active_material_index = len(context.object.material_slots) - 1
-            _overflow = 0
-            while context.object.active_material.name != mat_name:
-                context.object.active_material_index -= 1
-                _overflow += 1
-                if _overflow > len(context.object.data.materials):
-                    break
-            _overflow = 0
-            while context.object.active_material_index > _i:
-                bpy.ops.object.material_slot_move(direction='UP')
-                _overflow += 1
-                if _overflow > len(context.object.data.materials):
-                    break
+        for _slot_i, (_i, mat_name, weight) in enumerate(active_obj_materials_sorted):
+            # get material index from which switch material by its name
+            slot_from = next((_idx + _slot_i for _idx, _material in enumerate(context.object.data.materials[_slot_i:])
+                              if cls._material_name(_material) == mat_name), None)
+            if slot_from:
+                cls._switch_materials(context.object, slot_from, _slot_i)
         # return mode back
         bpy.ops.object.mode_set(mode=mode)
 
@@ -253,6 +257,26 @@ class MaterialSelect:
         # remove .001 postfix from name
         regexp = re.compile(r'(\.\d{3}$)')
         return regexp.split(name)[0]
+
+    @staticmethod
+    def _material_name(_material):
+        # get material name
+        return _material.name if _material else 'None'
+
+    @staticmethod
+    def _switch_materials(obj, mat_1_idx, mat_2_idx):
+        # witch material with mat_1_idx index with material with mat_2_idx index in obj materials list
+        #   switching only in materials list / materials slots, no real changes on objects
+        # switch materials
+        obj.data.materials[mat_1_idx], obj.data.materials[mat_2_idx] = \
+            obj.data.materials[mat_2_idx], obj.data.materials[mat_1_idx]
+        # switch material indices on polygons
+        polygons_mat_1_idx = [_p for _p in obj.data.polygons if _p.material_index == mat_1_idx]
+        polygons_mat_2_idx = [_p for _p in obj.data.polygons if _p.material_index == mat_2_idx]
+        for polygon in polygons_mat_1_idx:
+            polygon.material_index = mat_2_idx
+        for polygon in polygons_mat_2_idx:
+            polygon.material_index = mat_1_idx
 
     @staticmethod
     def ui(layout, context):
