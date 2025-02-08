@@ -195,13 +195,14 @@ class MaterialSelect:
         materials_area = {}
         for obj in (_obj for _obj in context.selected_objects if _obj.type == 'MESH' and _obj.data.materials):
             for polygon in obj.data.polygons:
-                material_name = obj.data.materials[polygon.material_index].name
-                if material_name in materials_area:
-                    materials_area[material_name] += polygon.area
-                else:
-                    materials_area[material_name] = polygon.area
+                if obj.data.materials[polygon.material_index]:
+                    material_name = obj.data.materials[polygon.material_index].name
+                    if material_name in materials_area:
+                        materials_area[material_name] += polygon.area
+                    else:
+                        materials_area[material_name] = polygon.area
         # ['cyan', 'blue', 'red'] - not sorted by area
-        active_obj_materials = [_material.name for _material in context.active_object.data.materials]
+        active_obj_materials = [_material.name for _material in context.active_object.data.materials if _material]
         # {'blue': 52.0, 'cyan': 112.0, 'red': 36.0} values got from materials_area
         active_obj_materials_weights = {_k: materials_area[_k] for _k in active_obj_materials}
         # ['red', 'blue', 'cyan'] - sorted by area
@@ -209,7 +210,8 @@ class MaterialSelect:
         # report
         op.report(
             type={'INFO'},
-            message='Active object material weights: ' + str(active_obj_materials_weights)
+            message='Active object material weights: '
+                    + str([name + ': ' + str(materials_area[name]) for name in active_obj_materials_sorted])
         )
         # sort materials in object's material_slots by weight
         #   using bpy.ops.object.material_slot_move() because can't find more simple way
@@ -232,11 +234,11 @@ class MaterialSelect:
         bpy.ops.object.mode_set(mode=mode)
 
     @staticmethod
-    def multiply_viewport_color(context, hue_multiplier, saturation_multiplier, value_multiplier):
+    def multiply_viewport_color(context, hue_adder=0.0, saturation_multiplier=1.0, value_multiplier=1.0):
         # multiply Hue of the Material Viewport Color by a certain value for each material on the active object
         if hasattr(context.object.data, 'materials'):
             for material in (_mat for _mat in context.object.data.materials if _mat.node_tree):
-                material.diffuse_color.h *= hue_multiplier
+                material.diffuse_color.h += hue_adder  # Palu: summ, not multiplying
                 material.diffuse_color.s *= saturation_multiplier
                 material.diffuse_color.v *= value_multiplier
 
@@ -338,12 +340,12 @@ class MaterialSelect:
             operator='materialselect.multiply_viewport_color',
             icon='COLORSET_08_VEC'
         )
-        op.hue_multiplier = context.window_manager.material_select_prop_viewport_color_hue_multiplier
+        op.hue_adder = context.window_manager.material_select_prop_viewport_color_hue_adder
         op.saturation_multiplier = context.window_manager.material_select_prop_viewport_color_saturation_multiplier
         op.value_multiplier = context.window_manager.material_select_prop_viewport_color_value_multiplier
         col.prop(
             data=context.window_manager,
-            property='material_select_prop_viewport_color_hue_multiplier'
+            property='material_select_prop_viewport_color_hue_adder'
         )
         col.prop(
             data=context.window_manager,
@@ -522,9 +524,9 @@ class MaterialSelect_OT_multiply_viewport_color(Operator):
     bl_label = 'Viewport Color Multiply'
     bl_options = {'REGISTER', 'UNDO'}
 
-    hue_multiplier = FloatProperty(
-        name='Hue Multiplier',
-        default=1.0
+    hue_adder = FloatProperty(
+        name='Hue Adder',
+        default=0.0
     )
     saturation_multiplier = FloatProperty(
         name='Saturation Multiplier',
@@ -538,7 +540,7 @@ class MaterialSelect_OT_multiply_viewport_color(Operator):
     def execute(self, context):
         MaterialSelect.multiply_viewport_color(
             context=context,
-            hue_multiplier=self.hue_multiplier,
+            hue_adder=self.hue_adder,
             saturation_multiplier=self.saturation_multiplier,
             value_multiplier=self.value_multiplier
         )
@@ -563,9 +565,9 @@ class MaterialSelect_PT_panel(Panel):
 # REGISTER
 
 def register(ui=True):
-    WindowManager.material_select_prop_viewport_color_hue_multiplier = FloatProperty(
-        name='Hue Multiplier',
-        default=1.0
+    WindowManager.material_select_prop_viewport_color_hue_adder = FloatProperty(
+        name='Hue Adder',
+        default=0.0
     )
     WindowManager.material_select_prop_viewport_color_saturation_multiplier = FloatProperty(
         name='Saturation Multiplier',
@@ -630,7 +632,7 @@ def unregister(ui=True):
     del Scene.material_select_prop_t2m_mode
     del WindowManager.material_select_prop_prefix_to
     del WindowManager.material_select_prop_prefix_from
-    del WindowManager.material_select_prop_viewport_color_hue_multiplier
+    del WindowManager.material_select_prop_viewport_color_hue_adder
     del WindowManager.material_select_prop_viewport_color_saturation_multiplier
     del WindowManager.material_select_prop_viewport_color_value_multiplier
 
