@@ -287,6 +287,7 @@ class MaterialSelect:
             icon='SORTSIZE'
         )
         # unpack textures operator
+        layout.separator()
         layout.operator(
             operator='materialselect.unpack_textures_to_mat',
             icon='PACKAGE',
