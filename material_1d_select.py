@@ -17,7 +17,7 @@ bl_info = {
     "name": "Material 1D Select",
     "description": "Selects all objects with the same material on active object",
     "author": "Nikita Akimov, Paul Kotelevets",
-    "version": (1, 3, 2),
+    "version": (1, 4, 0),
     "blender": (2, 79, 0),
     "location": "View3D > Tool panel > 1D > Vertical Vertices",
     "doc_url": "https://github.com/Korchy/1d_material_select",
@@ -234,11 +234,11 @@ class MaterialSelect:
     @staticmethod
     def multiply_viewport_color(context, hue_multiplier, saturation_multiplier, value_multiplier):
         # multiply Hue of the Material Viewport Color by a certain value for each material on the active object
-        print(hue_multiplier, saturation_multiplier, value_multiplier)
-        for material in (_mat for _mat in context.object.data.materials if _mat.node_tree):
-            material.diffuse_color.h *= hue_multiplier
-            material.diffuse_color.s *= saturation_multiplier
-            material.diffuse_color.v *= value_multiplier
+        if hasattr(context.object.data, 'materials'):
+            for material in (_mat for _mat in context.object.data.materials if _mat.node_tree):
+                material.diffuse_color.h *= hue_multiplier
+                material.diffuse_color.s *= saturation_multiplier
+                material.diffuse_color.v *= value_multiplier
 
     @staticmethod
     def _deselect_all(context):
