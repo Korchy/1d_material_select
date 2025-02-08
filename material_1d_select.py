@@ -213,8 +213,8 @@ class MaterialSelect:
         op.report(
             type={'INFO'},
             message='Active object material weights: '
-                    # + str([_item[1] + ': ' + str(round(_item[2], 1)) for _item in active_obj_materials_sorted])
-                    + str([name + ': ' + str(active_obj_materials_weights[name]) for name in active_obj_materials_sorted])
+                    + str([name + ': ' + str(round(active_obj_materials_weights[name], 1))
+                           for name in active_obj_materials_sorted])
         )
         # extend to all material slots
         #   [(index, name, weight), ...]
@@ -281,20 +281,7 @@ class MaterialSelect:
     @staticmethod
     def ui(layout, context):
         # ui panel
-        # sort by area
-        layout.operator(
-            operator='materialselect.sort_by_area',
-            icon='SORTSIZE'
-        )
-        # unpack textures operator
-        layout.separator()
-        layout.operator(
-            operator='materialselect.unpack_textures_to_mat',
-            icon='PACKAGE',
-            text='Unpack textures by Material'
-        )
         # find operators
-        layout.separator()
         box = layout.box()
         op = box.operator(
             operator='materialselect.find_any',
@@ -327,6 +314,20 @@ class MaterialSelect:
             operator='materialselect.viewport_color_to_principled',
             icon='GROUP_VCOL',
             text='Viewport color to Principled'
+        )
+        # sort, unpack
+        layout.separator()
+        box = layout.box()
+        # sort by area
+        box.operator(
+            operator='materialselect.sort_by_area',
+            icon='SORTSIZE'
+        )
+        # unpack textures operator
+        box.operator(
+            operator='materialselect.unpack_textures_to_mat',
+            icon='PACKAGE',
+            text='Unpack textures by Material'
         )
         # texture operators
         layout.separator()
