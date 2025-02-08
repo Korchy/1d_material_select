@@ -281,7 +281,19 @@ class MaterialSelect:
     @staticmethod
     def ui(layout, context):
         # ui panel
+        # sort by area
+        layout.operator(
+            operator='materialselect.sort_by_area',
+            icon='SORTSIZE'
+        )
+        # unpack textures operator
+        layout.operator(
+            operator='materialselect.unpack_textures_to_mat',
+            icon='PACKAGE',
+            text='Unpack textures by Material'
+        )
         # find operators
+        layout.separator()
         box = layout.box()
         op = box.operator(
             operator='materialselect.find_any',
@@ -303,6 +315,7 @@ class MaterialSelect:
             property='material_select_exact_number'
         )
         # material operators
+        layout.separator()
         box = layout.box()
         box.operator(
             operator='materialselect.principled_color_to_viewport',
@@ -315,6 +328,7 @@ class MaterialSelect:
             text='Viewport color to Principled'
         )
         # texture operators
+        layout.separator()
         box = layout.box()
         op = box.operator(
             operator='materialselect.texture_name_to_material',
@@ -329,13 +343,8 @@ class MaterialSelect:
             expand=False,
             text=''
         )
-        # unpack operator
-        layout.operator(
-            operator='materialselect.unpack_textures_to_mat',
-            icon='PACKAGE',
-            text='Unpack textures by Material'
-        )
         # material prefix
+        layout.separator()
         box = layout.box()
         col = box.column(align=True)
         col.prop(
@@ -352,12 +361,8 @@ class MaterialSelect:
         )
         op.prefix_from = context.window_manager.material_select_prop_prefix_from
         op.prefix_to = context.window_manager.material_select_prop_prefix_to
-        # sort by area
-        layout.operator(
-            operator='materialselect.sort_by_area',
-            icon='SORTSIZE'
-        )
         # multiply viewport color (hue)
+        layout.separator()
         box = layout.box()
         col = box.column(align=True)
         op = col.operator(
