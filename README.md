@@ -47,9 +47,13 @@ Sort materials on the active object by the whole area of the material on all sel
 
 Multiply Hue/Saturation/Value of the Material Viewport Color by a certain value for each material on the active object
 
+**Mats Dbase to Active**
+
+Append all materials from the scene to the currently active object material slots
+
 Current version
 -
-1.4.0.
+1.5.0.
 
 Blender version
 -
@@ -57,6 +61,9 @@ Blender version
 
 Version history
 -
+1.5.0
+- "Mats Dbase to Active" added
+
 1.4.0
 - "Material Prefix" added
 - "Sort Material by Area" added

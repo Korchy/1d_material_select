@@ -17,7 +17,7 @@ bl_info = {
     "name": "Material 1D Select",
     "description": "Selects all objects with the same material on active object",
     "author": "Nikita Akimov, Paul Kotelevets",
-    "version": (1, 4, 0),
+    "version": (1, 5, 0),
     "blender": (2, 79, 0),
     "location": "View3D > Tool panel > 1D > Vertical Vertices",
     "doc_url": "https://github.com/Korchy/1d_material_select",
@@ -247,6 +247,20 @@ class MaterialSelect:
                 material.diffuse_color.v *= value_multiplier
 
     @staticmethod
+    def mats_dbase_to_active(context):
+        # for all materials in the scene - add them to material slots of the active object
+        # switch to the OBJECT mode
+        mode = context.object.mode
+        if mode == 'EDIT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        # process all materials
+        for material in context.blend_data.materials:
+            if material not in context.object.data.materials[:]:
+                context.object.data.materials.append(material)
+        # return mode back
+        bpy.ops.object.mode_set(mode=mode)
+
+    @staticmethod
     def _deselect_all(context):
         # deselect all objects
         for obj in context.scene.objects:
@@ -386,6 +400,14 @@ class MaterialSelect:
             data=context.window_manager,
             property='material_select_prop_viewport_color_value_multiplier'
         )
+        # mats dbase to active
+        layout.separator()
+        box = layout.box()
+        box.operator(
+            operator='materialselect.mats_dbase_to_active',
+            icon='SEQ_CHROMA_SCOPE'
+        )
+
 
 
 # OPERATORS
@@ -578,6 +600,18 @@ class MaterialSelect_OT_multiply_viewport_color(Operator):
         return {'FINISHED'}
 
 
+class MaterialSelect_OT_mats_dbase_to_active(Operator):
+    bl_idname = 'materialselect.mats_dbase_to_active'
+    bl_label = 'Mats Dbase to Active'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        MaterialSelect.mats_dbase_to_active(
+            context=context
+        )
+        return {'FINISHED'}
+
+
 # PANELS
 
 class MaterialSelect_PT_panel(Panel):
@@ -642,6 +676,7 @@ def register(ui=True):
     register_class(MaterialSelect_OT_mat_prefix)
     register_class(MaterialSelect_OT_sort_by_area)
     register_class(MaterialSelect_OT_multiply_viewport_color)
+    register_class(MaterialSelect_OT_mats_dbase_to_active)
     if ui:
         register_class(MaterialSelect_PT_panel)
 
@@ -649,6 +684,7 @@ def register(ui=True):
 def unregister(ui=True):
     if ui:
         unregister_class(MaterialSelect_PT_panel)
+    unregister_class(MaterialSelect_OT_mats_dbase_to_active)
     unregister_class(MaterialSelect_OT_multiply_viewport_color)
     unregister_class(MaterialSelect_OT_sort_by_area)
     unregister_class(MaterialSelect_OT_mat_prefix)
